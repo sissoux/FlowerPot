@@ -56,7 +56,6 @@ enum ALS_SD{
     OFF,
 };
 
-
 struct CommandRegister{
     enum ALS_SD shutdown:1;
     int :3;
@@ -68,83 +67,15 @@ struct CommandRegister{
 }__attribute__((packed));
 
 struct CommandRegister ConfRegister;
-
-/**
- * @brief i2c master initialization
- */
-static esp_err_t i2c_master_init(void)
-{
-    int i2c_port = _I2C_NUMBER;
-    i2c_config_t conf;
-    conf.mode = I2C_MODE_MASTER;
-    conf.sda_io_num = I2C_MASTER_SDA_IO;
-    conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
-    conf.scl_io_num = I2C_MASTER_SCL_IO;
-    conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
-    conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
-    i2c_param_config(i2c_port, &conf);
-    return i2c_driver_install(i2c_port, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
-}
-
-int StartMeasurement(i2c_port_t i2c_num)
-{
-    i2c_master_init();
-    ConfRegister.ALS_Gain = Gain_1;
-    ConfRegister.ALS_IntegrationTime = IT_100_ms;
-    ConfRegister.ALS_Persistance = Pers_1;
-    ConfRegister.shutdown = ON;
-    
-    int ret;
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, VEML7700_I2C_ADDRESS << 1 | WRITE_BIT, ACK_CHECK_EN);
-    i2c_master_write_byte(cmd, VEML7700_CONF_0_REG, ACK_CHECK_EN);
-    i2c_master_write_byte(cmd, *((uint8_t *)&ConfRegister), ACK_CHECK_EN);
-    i2c_master_write_byte(cmd, *((uint8_t *)&ConfRegister+1), ACK_CHECK_EN);
-    i2c_master_stop(cmd);
-
-    ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_RATE_MS);
-    i2c_cmd_link_delete(cmd);
-/*
-    cmd = i2c_cmd_link_create();
-
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, VEML7700_I2C_ADDRESS << 1 | WRITE_BIT, ACK_CHECK_EN);
-    i2c_master_write_byte(cmd, 0x03, ACK_CHECK_EN);
-    i2c_master_write_byte(cmd, 0x00, ACK_CHECK_EN);
-    i2c_master_write_byte(cmd, 0x00, ACK_CHECK_EN);
-    i2c_master_stop(cmd);
-
-    ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_RATE_MS);
-    i2c_cmd_link_delete(cmd);*/
-    return ret;
-}
-
-int getMeasurement(i2c_port_t i2c_num, float *Illuminance)
-{
-    int ret;
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    uint8_t data_h;
-    uint8_t data_l;
-
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, VEML7700_I2C_ADDRESS << 1 | WRITE_BIT, ACK_CHECK_EN);
-    i2c_master_write_byte(cmd, VEML7700_ALS_REG, ACK_CHECK_EN);
-    //i2c_master_stop(cmd);
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, VEML7700_I2C_ADDRESS << 1 | READ_BIT, ACK_CHECK_EN);
-    i2c_master_read_byte(cmd, &data_l, ACK_VAL);
-    i2c_master_read_byte(cmd, &data_h, NACK_VAL);
-    i2c_master_stop(cmd);
-
-    ret = i2c_master_cmd_begin(i2c_num, cmd, 1000 / portTICK_RATE_MS);
-    i2c_cmd_link_delete(cmd);
-    *Illuminance = ((float)((data_h << 8) + data_l))*0.0576;
-    return ret;
-}
+extern bool VELM_initialized;
 
 
-
+esp_err_t i2c_master_init(void);
+int VEML7700_init(void);
+int VEML7700_autoAdjust(void);
+int VEML7700_stop(void);
+int VEML7700_sendConfig(struct CommandRegister configRegister);
+int VEML7700_getMeasurement(float *Illuminance);
+float VEML7700_getGain(struct CommandRegister);
 
 #endif

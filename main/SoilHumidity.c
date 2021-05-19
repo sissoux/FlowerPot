@@ -1,7 +1,5 @@
 #include "SoilHumidity.h"
 
-
-
 uint8_t soilHumidity_ValueReady=0;
 volatile uint16_t soilHumidity =0;
 
