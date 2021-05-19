@@ -19,7 +19,7 @@
 #include "freertos/task.h"
 
 
-//static const char *device_name = "MyFlowerPot_1.0";
+static const char *device_name = "MyFlowerPot_1.0";
 
 /* Variable holding number of times ESP32 restarted since first boot.
  * It is placed into RTC memory using RTC_DATA_ATTR and
@@ -61,7 +61,7 @@ void app_main(void)
       esp_wifi_stop();
     }
 
-    ESP_LOGI(WifiTAG, "Boot number: %d.\nEntering deep sleep for %d seconds", boot_count, DEEP_SLEEP_SEC);
+    ESP_LOGI(device_name, "Boot %d/%d. Entering deep sleep for %d seconds", boot_count, WIFI_SEND_PERIOD, DEEP_SLEEP_SEC);
     esp_deep_sleep(1000000LL * DEEP_SLEEP_SEC); 
 
 }
