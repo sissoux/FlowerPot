@@ -33,7 +33,7 @@ static const char *ENV_TAG = "Env sensor";
 RTC_DATA_ATTR static int boot_count = 0;
 
 
-#define SENSORS_READ_PERIOD 2 //s
+#define SENSORS_READ_PERIOD 8 //s
 #define WIFI_SEND_PERIOD 5 //times the read period
 
 #define DEEP_SLEEP_SEC SENSORS_READ_PERIOD
