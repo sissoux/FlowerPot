@@ -28,7 +28,7 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_PW "motdepasse"
 #define WIFI_MAXIMUM_RETRY 5
 
-static const char *TAG = "wifi station";
+static const char *WifiTAG = "wifi station";
 
 static int s_retry_num = 0;
 

@@ -61,7 +61,7 @@ void app_main(void)
       esp_wifi_stop();
     }
 
-    ESP_LOGI(TAG, "Boot number: %d.\nEntering deep sleep for %d seconds", boot_count, DEEP_SLEEP_SEC);
+    ESP_LOGI(WifiTAG, "Boot number: %d.\nEntering deep sleep for %d seconds", boot_count, DEEP_SLEEP_SEC);
     esp_deep_sleep(1000000LL * DEEP_SLEEP_SEC); 
 
 }
