@@ -8,6 +8,8 @@
 */
 #include "FlowerPotWifi.h"
 #include "SoilHumidity.h"
+#include "VEML7700.h"
+
 
 #include "esp_system.h"
 #include "esp_spi_flash.h"
@@ -28,8 +30,8 @@ static const char *device_name = "MyFlowerPot_1.0";
 RTC_DATA_ATTR static int boot_count = 0;
 
 
-#define SENSORS_READ_PERIOD 5 //s
-#define WIFI_SEND_PERIOD 4 //times the read period
+#define SENSORS_READ_PERIOD 2 //s
+#define WIFI_SEND_PERIOD 100 //times the read period
 
 #define DEEP_SLEEP_SEC SENSORS_READ_PERIOD
 RTC_DATA_ATTR uint16_t SoilHumidityBuffer[WIFI_SEND_PERIOD];
@@ -39,29 +41,39 @@ RTC_DATA_ATTR uint16_t SoilHumidityBuffer[WIFI_SEND_PERIOD];
 
 void app_main(void)
 {
-    soil_humidity_sensor_init();
-    soil_humidity_start_readings();
-    while(!soilHumidity_ValueReady) vTaskDelay(200 / portTICK_PERIOD_MS);
-    printf("Soil value is ready: %4d\n",soilHumidity);
-    SoilHumidityBuffer[boot_count] = soilHumidity;
+  soil_humidity_sensor_init();
+  soil_humidity_start_readings();
+  while(!soilHumidity_ValueReady) vTaskDelay(200 / portTICK_PERIOD_MS);
+  printf("Soil value is ready: %4d\n",soilHumidity);
+  SoilHumidityBuffer[boot_count] = soilHumidity;
 
-    boot_count++;
-    if (boot_count==WIFI_SEND_PERIOD)
+
+  boot_count++;
+  if (boot_count==WIFI_SEND_PERIOD)
+  {
+    boot_count = 0;
+    wifi_init_nvs();
+    wifi_init_sta();
+    for (int i =0; i < WIFI_SEND_PERIOD; i++)
     {
-      boot_count = 0;
-      wifi_init_nvs();
-      wifi_init_sta();
-      for (int i =0; i < WIFI_SEND_PERIOD; i++)
-      {
-        printf("Soil[%d] = %4d\n", i, SoilHumidityBuffer[i]);
-      }
-      //IF WIFI UNAVAILABLE STORE IN FLASH
-      //SYNC UP TIME
-      //SEND DATA
-      esp_wifi_stop();
+      printf("Soil[%d] = %4d\n", i, SoilHumidityBuffer[i]);
     }
+    //IF WIFI UNAVAILABLE STORE IN FLASH
+    //SYNC UP TIME
+    //SEND DATA
+    esp_wifi_stop();
+  }
 
-    ESP_LOGI(device_name, "Boot %d/%d. Entering deep sleep for %d seconds", boot_count, WIFI_SEND_PERIOD, DEEP_SLEEP_SEC);
-    esp_deep_sleep(1000000LL * DEEP_SLEEP_SEC); 
+  float Illum = 0;
+  StartMeasurement(_I2C_NUMBER);
+  while (true)
+  {
+    getMeasurement(_I2C_NUMBER, &Illum);
+    printf("Got illuminance value: %.2f lux\n",Illum);
+    vTaskDelay(200 / portTICK_PERIOD_MS);
+  }
+
+  //ESP_LOGI(device_name, "Boot %d/%d. Entering deep sleep for %d seconds", boot_count, WIFI_SEND_PERIOD, DEEP_SLEEP_SEC);
+  //esp_deep_sleep(1000000LL * DEEP_SLEEP_SEC); 
 
 }
