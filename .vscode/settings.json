@@ -7,6 +7,7 @@
     "ble_hs.h": "c",
     "esp_adc_cal.h": "c",
     "esp_log.h": "c",
-    "*.ipp": "cpp"
+    "*.ipp": "cpp",
+    "flowerpotwifi.h": "c"
   }
 }

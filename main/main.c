@@ -6,6 +6,8 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
+#include "define.h"
+#include "Secrets.h"
 #include "FlowerPotWifi.h"
 #include "SoilHumidity.h"
 #include "VEML7700.h"
@@ -19,24 +21,14 @@
 #include "freertos/FreeRTOSConfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#define ENABLED_WIFI false
 
 
-static const char *DEVICE_NAME = "MyFlowerPot_1.0";
-static const char *ENV_TAG = "Env sensor";
 
-
-/* Variable holding number of times ESP32 restarted since first boot.
- * It is placed into RTC memory using RTC_DATA_ATTR and
- * maintains its value when ESP32 wakes from deep sleep.
+/* Variables placedinto RTC memory using RTC_DATA_ATTR are
+ * maintaining their value when ESP32 wakes from deep sleep.
+ * 8kB of RTC memory available.
  */
 RTC_DATA_ATTR static int boot_count = 0;
-
-
-#define SENSORS_READ_PERIOD 8 //s
-#define WIFI_SEND_PERIOD 5 //times the read period
-
-#define DEEP_SLEEP_SEC SENSORS_READ_PERIOD
 RTC_DATA_ATTR uint16_t SoilHumidityBuffer[WIFI_SEND_PERIOD];
 RTC_DATA_ATTR float IlluminanceBuffer[WIFI_SEND_PERIOD];
 
@@ -102,9 +94,9 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 static void mqtt_app_start(void)
 {
     esp_mqtt_client_config_t mqtt_cfg = {
-        .uri = "mqtt://homeassistant.local",
-        .username = "dd",
-        .password = "dd"
+        .uri = MQTT_URI,
+        .username = MQTT_USER,
+        .password = MQTT_PASSWORD
     };
 
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);

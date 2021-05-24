@@ -14,6 +14,7 @@
 #include "lwip/sys.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
+#include "Secrets.h"
 
 
 /* FreeRTOS event group to signal when we are connected*/
@@ -24,8 +25,8 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
 
-#define WIFI_SSID "alexwifiap"
-#define WIFI_PW "motdepasse"
+#define WIFI_SSID SEC_WIFI_SSID
+#define WIFI_PW SEC_WIFI_PASSWORD
 #define WIFI_MAXIMUM_RETRY 5
 
 static const char *WifiTAG = "wifi station";
