@@ -8,6 +8,9 @@
     "esp_adc_cal.h": "c",
     "esp_log.h": "c",
     "*.ipp": "cpp",
-    "flowerpotwifi.h": "c"
+    "flowerpotwifi.h": "c",
+    "*.inc": "c",
+    "mqtt_client.h": "c",
+    "cjson.h": "c"
   }
 }

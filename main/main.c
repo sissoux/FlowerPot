@@ -21,10 +21,16 @@
 #include "freertos/FreeRTOSConfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
+#include "freertos/queue.h"
+#include "esp_event.h"
+#include "esp_netif.h"
+#include "mqtt_client.h"
+#include "cJSON.h"
 
 
 
-/* Variables placedinto RTC memory using RTC_DATA_ATTR are
+/* Variables placedinto RTC memory using RTC_DATA_ATTR are 
  * maintaining their value when ESP32 wakes from deep sleep.
  * 8kB of RTC memory available.
  */
@@ -32,61 +38,63 @@ RTC_DATA_ATTR static int boot_count = 0;
 RTC_DATA_ATTR uint16_t SoilHumidityBuffer[WIFI_SEND_PERIOD];
 RTC_DATA_ATTR float IlluminanceBuffer[WIFI_SEND_PERIOD];
 
+
+
 //ADD TIMESTAMP BUFFER
+static const char *configTopic = "homeassistant/sensor/myFlowerPot1T/config";
 
-
+static const char *configPayload= "{\"device_class\": \"temperature\", \"name\": \"Temperature\", \"state_topic\": \"homeassistant/sensor/sensorBedroom/state\", \"unit_of_measurement\": \"°C\", \"value_template\": \"{{ value_json.temperature}}\" }";
 
 static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
 {
     esp_mqtt_client_handle_t client = event->client;
     int msg_id;
-    // your_context_t *context = event->context;
     switch (event->event_id) {
 
 
         case MQTT_EVENT_CONNECTED:
-            ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
+            ESP_LOGI(MQTT_TAG, "MQTT_EVENT_CONNECTED");
             break;
 
 
         case MQTT_EVENT_DISCONNECTED:
-            ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
+            ESP_LOGI(MQTT_TAG, "MQTT_EVENT_DISCONNECTED");
             break;
 
         case MQTT_EVENT_SUBSCRIBED:
-            ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+            ESP_LOGI(MQTT_TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
             break;
 
 
         case MQTT_EVENT_UNSUBSCRIBED:
-            ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
+            ESP_LOGI(MQTT_TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
             break;
 
 
         case MQTT_EVENT_PUBLISHED:
-            ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+            ESP_LOGI(MQTT_TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
             break;
 
 
         case MQTT_EVENT_DATA:
-            ESP_LOGI(TAG, "MQTT_EVENT_DATA");
+            ESP_LOGI(MQTT_TAG, "MQTT_EVENT_DATA");
             break;
 
 
         case MQTT_EVENT_ERROR:
-            ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
+            ESP_LOGI(MQTT_TAG, "MQTT_EVENT_ERROR");
             break;
 
 
         default:
-            ESP_LOGI(TAG, "Other event id:%d", event->event_id);
+            ESP_LOGI(MQTT_TAG, "Other event id:%d", event->event_id);
             break;
     }
     return ESP_OK;
 }
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
-    ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
+    ESP_LOGD(MQTT_TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
     mqtt_event_handler_cb(event_data);
 }
 
@@ -109,6 +117,7 @@ void app_main(void)
 {
   soil_humidity_sensor_init();
   soil_humidity_start_readings();
+
   while(!soilHumidity_ValueReady) vTaskDelay(1 / portTICK_PERIOD_MS);
   ESP_LOGI(ENV_TAG, "Soil value is ready: %4d",soilHumidity);
   SoilHumidityBuffer[boot_count] = soilHumidity;
@@ -130,6 +139,7 @@ void app_main(void)
     {
       wifi_init_nvs();
       wifi_init_sta();
+      mqtt_app_start();
     }
     for (int i =0; i < WIFI_SEND_PERIOD; i++)
     {
@@ -147,5 +157,6 @@ void app_main(void)
 
   ESP_LOGI(DEVICE_NAME, "Boot %d/%d. Entering deep sleep for %d seconds", boot_count, WIFI_SEND_PERIOD, DEEP_SLEEP_SEC);
   esp_deep_sleep(1000000LL * DEEP_SLEEP_SEC); 
+
 
 }
